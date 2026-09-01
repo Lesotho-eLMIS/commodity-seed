@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 )
 
 type Product struct {
@@ -23,10 +24,19 @@ type Product struct {
 }
 
 func main() {
-	 connStr := "postgres://postgres:postgres@dev.elmis.gov.ls:5200/db_e_nchacha?sslmode=disable" 
-/* connStr := "postgres://elmis:postgres@localhost:5432/elmis?sslmode=disable" */
+
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, relying on system environment variables")
+	}
+
+	connStr := os.Getenv("DATABASE_URL")
+	/* if connStr == "" {
+		// Fallback if env is missing
+		connStr = "postgres://elmis:postgres@localhost:5432/elmis?sslmode=disable"
+	} */
 
 	db, err := sql.Open("pgx", connStr)
+
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -58,7 +68,7 @@ func main() {
 		)
 		ORDER BY o.fullproductname
 	`)
-   
+
 	if err != nil {
 		log.Fatalf("Query failed: %v", err)
 	}
@@ -75,6 +85,9 @@ func main() {
 
 		nameKey := normalizeNameForGrouping(p.FullName)
 		groupedProducts[nameKey] = append(groupedProducts[nameKey], p)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatalf("Rows iteration error: %v", err)
 	}
 
 	var cleanGroups [][]Product
@@ -211,20 +224,20 @@ func executeMigration(db *sql.DB, p Product, finalName, classID, genericCode str
 		return err
 	}
 
-	// 2. Resolve or Create the Generic Orderable
+	// Resolve or Create the Generic Orderable
 	var genericOrderableUUID string
 	err = tx.QueryRow(`SELECT id FROM referencedata.orderables WHERE code = $1`, genericCode).Scan(&genericOrderableUUID)
 
 	if err == sql.ErrNoRows {
 		err = tx.QueryRow(`
-			INSERT INTO referencedata.orderables (
-				id, versionnumber, code, fullproductname, description, dispensableid,
-				packroundingthreshold, netcontent, roundtozero, lastupdated
-			) VALUES (
-				gen_random_uuid(), 1, $1, $2, $3, $4, $5, $6, $7, now()
-			)
-			RETURNING id
-		`, genericCode, finalName, p.Description, p.DispensableID, p.PackRoundingThreshold, p.NetContent, p.RoundToZero).Scan(&genericOrderableUUID)
+    INSERT INTO referencedata.orderables (
+        id, versionnumber, code, fullproductname, description, dispensableid,
+        packroundingthreshold, netcontent, roundtozero, lastupdated, extradata
+    ) VALUES (
+        gen_random_uuid(), 1, $1, $2, $3, $4, $5, $6, $7, now(), '{"isCommodityType": true}'::jsonb
+    )
+    RETURNING id
+`, genericCode, finalName, p.Description, p.DispensableID, p.PackRoundingThreshold, p.NetContent, p.RoundToZero).Scan(&genericOrderableUUID)
 		if err != nil {
 			return fmt.Errorf("failed inserting generic orderable: %w", err)
 		}
