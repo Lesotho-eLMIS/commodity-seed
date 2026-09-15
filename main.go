@@ -30,10 +30,6 @@ func main() {
 	}
 
 	connStr := os.Getenv("DATABASE_URL")
-	/* if connStr == "" {
-		// Fallback if env is missing
-		connStr = "postgres://elmis:postgres@localhost:5432/elmis?sslmode=disable"
-	} */
 
 	db, err := sql.Open("pgx", connStr)
 
@@ -163,8 +159,8 @@ func runInteractiveCLI(db *sql.DB, cleanGroups [][]Product) {
 			fmt.Printf("  - %s\n", item.Code)
 		}
 
-		fmt.Printf("\nProposed Generic Name: %s\n", proposedGenericName)
-		fmt.Printf("Proposed Generic Code: %s\n", proposedGenericCode)
+		fmt.Printf("\nProposed CommodityType Name: %s\n", proposedGenericName)
+		fmt.Printf("Proposed CommodityType Code: %s\n", proposedGenericCode)
 		fmt.Printf("Proposed Class ID:     %s\n", proposedClassID)
 		fmt.Print("Press [Enter] to accept, [S] to skip, or type custom Generic Name: ")
 
