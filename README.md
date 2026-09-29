@@ -20,7 +20,9 @@ A standalone Go CLI utility designed to automate the migration of specific trade
 2. Add an environment file called .env to the root folder of the project, with the required postgres database credentials.
 We already have sample.env file with contains sample database connection string. All you need is to run
 
-<code>cp sample.env .env</code> which will copy information contained in sample.env into automatically generated .env file.
+<code>cp sample.env .env</code>
+
+which will copy information contained in sample.env into automatically generated .env file.
 
 3. Edit your .env with your respective database credentials.
 
